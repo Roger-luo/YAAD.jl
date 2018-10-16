@@ -3,6 +3,7 @@ struct BroadcastedTrait{FT}
 end
 
 (mt::BroadcastedTrait)(args...) = Broadcast.broadcasted(mt.f, args...)
+forward(f::BroadcastedTrait, args...) = f(map(forward, args)...)
 
 struct ComputGraphStyle <: Broadcast.BroadcastStyle end
 Base.BroadcastStyle(::Type{<:AbstractNode}) = ComputGraphStyle()
