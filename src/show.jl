@@ -17,6 +17,8 @@ struct ArrayVariable{T, N, AT <: AbstractArray{T, N}} <: AbstractArray{T, N}
     value::AT
 end
 
+# forward to default
+PrintTrait(x) = x
 PrintTrait(var::Number) = ScalarVariable(var)
 PrintTrait(var::Variable{<:Number}) = ScalarVariable(var.value)
 PrintTrait(var::CachedNode{<:AbstractNode, <:Number}) = ScalarVariable(var.output)
