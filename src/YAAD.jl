@@ -5,15 +5,11 @@ using DiffRules
 abstract type AbstractNode end
 abstract type Operator end
 
-# utils
-# include("function_trait.jl")
-
 # core
-include("variable.jl")
 include("comput_graph.jl")
+# Base.sin(x::AbstractNode) = register(Base.sin, x)
 
 # operators
-include("operators/utils.jl")
 include("operators/broadcast.jl")
 include("operators/math.jl")
 include("operators/linalg.jl")

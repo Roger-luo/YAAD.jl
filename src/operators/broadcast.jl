@@ -1,37 +1,34 @@
-struct BroadcastedTrait{FT}
-    f::FT
-end
-
-(mt::BroadcastedTrait)(args...) = Broadcast.broadcasted(mt.f, args...)
-forward(f::BroadcastedTrait, args...) = f(map(forward, args)...)
-
 struct ComputGraphStyle <: Broadcast.BroadcastStyle end
 Base.BroadcastStyle(::Type{<:AbstractNode}) = ComputGraphStyle()
 Broadcast.BroadcastStyle(s::ComputGraphStyle, x::Broadcast.BroadcastStyle) = s
 
 # # this enables method traits broadcast as a constant
-# Broadcast.BroadcastStyle(::Type{<:MethodTrait}) = Base.Broadcast.DefaultArrayStyle{0}()
-# Base.size(x::MethodTrait) = ()
-# Base.getindex(x::MethodTrait, i...) = x
-# Broadcast.broadcastable(x::MethodTrait) = x
-
 Broadcast.broadcastable(x::AbstractNode) = x
 
 function Broadcast.broadcasted(::ComputGraphStyle, f, args...)
-    mt = BroadcastedTrait(f)
-    CachedNode(mt, args)
+    mt = Trait.Broadcasted(f)
+    register(mt, args...)
 end
 
-Broadcast.materialize(x::AbstractNode) = CachedNode(Broadcast.materialize, (x, ))
-# Broadcast.materialize!(dest, x::AbstractNode) = CachedNode(MethodTrait(Broadcast.materialize!, 2), (dest, x))
-
+Broadcast.materialize(x::AbstractNode) = register(Broadcast.materialize, x)
 gradient(::typeof(Broadcast.materialize), grad, output, x) = (grad, )
-# gradient(x::CachedNode, bt::MethodTrait{typeof(Broadcast.materialize), Tuple{Any}}, grad) = (grad, )
-# gradient(x::CachedNode, bt::MethodTrait{typeof(Broadcast.materialize!), NTuple{2, Any}}, grad) = (grad, grad)
 
-# function gradient(x::CachedNode, bt::BroadcastedTrait, grad::AbstractArray)
-#     gradient.(MethodTrait(bt.f, 1), x.output, grad, map(value, x.node.args)...)
-# end
+# directly forward to broadcasted
+function backward(node::CachedNode, ::typeof(Broadcast.materialize), grad)
+    backward_type_assert(node, grad)
+    # TODO: replace with @assert when there is a compiler option for it
+    @boundscheck backward_size_assert(node, grad)
+    backward(arg(node, 1), grad)
+end
+
+#
+function backward(node::CachedNode, ::Trait.Broadcasted, grad)
+    grad_inputs = gradient(node, grad)
+    for (each, each_grad) in zip(args(node), grad_inputs)
+        backward(each, each_grad)
+    end
+    nothing
+end
 
 # arraymath.jl
 for sym in (:(/), :(\), :*, :+, :-)
@@ -49,5 +46,6 @@ end
 
 for sym in (:-, :conj, :real, :imag)
     f = Expr(:., :Base, QuoteNode(sym))
-    @eval ($f)(A::ArrayNode) = broadcast($f, A)
+    @eval ($f)(A::Variable{<:AbstractArray}) = broadcast($f, A)
+    @eval ($f)(A::CachedNode{<:Node, <:AbstractArray}) = broadcast($f, A)
 end
