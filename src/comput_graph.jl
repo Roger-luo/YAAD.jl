@@ -123,6 +123,7 @@ For function calls.
 function forward end
 
 forward(x) = x
+forward(x::Colon) = x
 forward(node::LeafNode) = value(node)
 forward(node::Node) = forward(node.f, map(forward, node.args)...)
 forward(node::CachedNode) = (node.output = forward(node.node))

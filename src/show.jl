@@ -27,7 +27,7 @@ PrintTrait(var::CachedNode{NT, AT}) where {T, N, NT, AT <: AbstractArray{T, N}} 
 Base.size(x::ArrayVariable) = size(x.value)
 Base.getindex(x::ArrayVariable, i...) = getindex(x.value, i...)
 
-const BuiltinNodes = Union{Variable, CachedNode, Node}
+const BuiltinNodes = Union{Variable, CachedNode}
 
 Base.show(io::IO, x::BuiltinNodes) = show(io, "text/plain", PrintTrait(x))
 Base.show(io::IO, m::MIME"text/plain", x::BuiltinNodes) = show(io, m, PrintTrait(x))
