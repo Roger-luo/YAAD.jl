@@ -18,19 +18,17 @@ struct ArrayVariable{T, N, AT <: AbstractArray{T, N}} <: AbstractArray{T, N}
 end
 
 # forward to default
-PrintTrait(x) = x
 PrintTrait(var::Number) = ScalarVariable(var)
 PrintTrait(var::Variable{<:Number}) = ScalarVariable(var.value)
 PrintTrait(var::CachedNode{<:AbstractNode, <:Number}) = ScalarVariable(var.output)
 PrintTrait(var::Variable{AT}) where {T, N, AT <: AbstractArray{T, N}} = ArrayVariable{T, N, AT}(var.value)
 PrintTrait(var::CachedNode{NT, AT}) where {T, N, NT, AT <: AbstractArray{T, N}} = ArrayVariable{T, N, AT}(var.output)
 
-
 Base.size(x::ArrayVariable) = size(x.value)
 Base.getindex(x::ArrayVariable, i...) = getindex(x.value, i...)
 
-Base.show(io::IO, x::AbstractNode) = show(io, "text/plain", PrintTrait(x))
-Base.show(io::IO, m::MIME"text/plain", x::AbstractNode) = show(io, m, PrintTrait(x))
-Base.summary(io::IO, x::AbstractNode) = summary(io, PrintTrait(x))
+Base.show(io::IO, x::Union{Variable, CachedNode, Node}) = show(io, "text/plain", PrintTrait(x))
+Base.show(io::IO, m::MIME"text/plain", x::Union{Variable, CachedNode, Node}) = show(io, m, PrintTrait(x))
+Base.summary(io::IO, x::Union{Variable, CachedNode, Node}) = summary(io, PrintTrait(x))
 Base.show(io::IO, x::ScalarVariable) = print(io, "(Tracked) ",x.value)
 Base.summary(io::IO, x::ArrayVariable) = (print(io, "(Tracked) "); summary(io, x.value))
