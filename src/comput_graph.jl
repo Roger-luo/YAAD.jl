@@ -186,8 +186,8 @@ backward_type_assert(args...) = true
 
 backward_type_assert(node::CachedNode{<:AbstractNode, T}, grad::T) where T = true
 # exclude arrays
-backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2)
-    where {T, N, T1 <: AbstractArray{T, N}, T2 <: AbstractArray{T, N}} = true
+backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where
+    {T, N, T1 <: AbstractArray{T, N}, T2 <: AbstractArray{T, N}} = true
 backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where {T1, T2} =
     error("Gradient is expected to have the same",
           " type with outputs, expected $T1",
