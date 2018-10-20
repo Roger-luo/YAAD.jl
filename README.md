@@ -18,9 +18,6 @@ and [PyTorch](https://github.com/pytorch/pytorch)
 Every operation will directly return a `CachedNode`, which constructs a computation
 graph dynamically without using a tape.
 
-The simplicity provides us a faster development, while waiting for those Cassette-based
-AD packages like [Zygote.jl](https://github.com/FluxML/Zygote.jl)
-
 ## Usage
 
 It is simple. Mark what you want to differentiate with `Variable`, which contains `value`
