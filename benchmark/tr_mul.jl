@@ -1,7 +1,7 @@
 using BenchmarkTools, LinearAlgebra
 import Zygote
 import Zygote: @grad
-
+using Test
 import AutoGrad, YAAD
 
 Zygote.@grad LinearAlgebra.tr(x) = LinearAlgebra.tr(x), Δ-> (Δ * Matrix(I, size(x)), )
@@ -22,20 +22,29 @@ function bench_tr_mul_zygote(x1, x2)
     g[x1], g[x2]
 end
 
-x = YAAD.Variable(rand(30, 30))
-y = YAAD.Variable(rand(30, 30))
+xv, yv = rand(30, 30), rand(30, 30)
 
+yaad_x = YAAD.Variable(xv)
+yaad_y = YAAD.Variable(yv)
+
+autograd_x = AutoGrad.Param(xv)
+autograd_y = AutoGrad.Param(yv)
+
+println("Check gradient:")
+
+@test bench_tr_mul_yaad(yaad_x, yaad_y) == bench_tr_mul_autograd(autograd_x, autograd_y)
+
+#  == bench_tr_mul_zygote(xv, yv)
 println("----------------------------------------------------------------------")
 println("YAAD:")
-display(@benchmark bench_tr_mul_yaad(x, y))
+display(@benchmark bench_tr_mul_yaad(yaad_x, yaad_y))
 
-x = AutoGrad.Param(rand(30, 30))
-y = AutoGrad.Param(rand(30, 30))
-
+println()
 println("----------------------------------------------------------------------")
 println("AutoGrad:")
-display(@benchmark bench_tr_mul_autograd(x, y))
+display(@benchmark bench_tr_mul_autograd(autograd_x, autograd_y))
 
+println()
 println("----------------------------------------------------------------------")
 println("Zygote:")
-display(@benchmark bench_tr_mul_zygote($(rand(30, 30)), $(rand(30, 30))))
+display(@benchmark bench_tr_mul_zygote(xv, yv))

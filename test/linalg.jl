@@ -13,3 +13,5 @@ z = tr(y)
 backward(z)
 x1.grad
 tr(x1)
+
+gradcheck(tr, Variable(rand(10, 10)))

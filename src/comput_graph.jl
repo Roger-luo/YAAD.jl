@@ -1,6 +1,5 @@
 export AbstractNode, LeafNode
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
-export Tracked
 export register
 
 # export register!
@@ -42,13 +41,15 @@ end
 General node in a comput-graph. It stores a callable operator `f` of type `FT`
 and its arguments `args` in type `ArgsT` which should be a tuple.
 """
-struct Node{FT <: Operator, ArgsT <: Tuple} <: AbstractNode
+struct Node{FT <: Operator, ArgsT <: Tuple, KwargsT <: NamedTuple} <: AbstractNode
     f::FT
     args::ArgsT
+    kwargs::KwargsT
 end
 
 # wrap function to Method
-Node(f::Function, args) = Node(Trait.Method(f), args)
+Node(f::Function, args, kwargs) = Node(Trait.Method(f), args, kwargs)
+Node(op, args) = Node(op, args, NamedTuple())
 
 """
     CachedNode{NT, OutT} <: AbstractNode
@@ -62,10 +63,10 @@ mutable struct CachedNode{NT <: AbstractNode, OutT} <: AbstractNode
     output::OutT
 end
 
-CachedNode(f, args, output) = CachedNode(Node(f, args), output)
+# CachedNode(f, args, output) = CachedNode(Node(f, args), output)
 
-function CachedNode(f, args)
-    node = Node(f, args)
+function CachedNode(f, args...; kwargs...)
+    node = Node(f, args, kwargs.data)
     output = forward(node)
     CachedNode(node, output)
 end
@@ -125,9 +126,9 @@ function forward end
 forward(x) = x
 forward(x::Colon) = x
 forward(node::LeafNode) = value(node)
-forward(node::Node) = forward(node.f, map(forward, node.args)...)
+forward(node::Node) = forward(node.f, map(forward, node.args)...; map(forward, node.kwargs)...)
 forward(node::CachedNode) = (node.output = forward(node.node))
-forward(op::Operator, args...) = op.f(args...)
+forward(op::Operator, args...; kwargs...) = op.f(args...; kwargs...)
 forward(op::Trait.Broadcasted, args...) = Broadcast.broadcasted(op.f, args...)
 
 # better error msg
@@ -210,16 +211,15 @@ function gradient end
 
 ## CachedNode
 # 1. general interface
-gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...)
-gradient(x::Node, grad) = gradient(x.f, grad, map(value, x.args)...)
+gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...; map(value, x.node.kwargs)...)
 
 # NOTE: operators help to define different grads when the fn is the same
 # e.g Broadcasted{typeof(sin)} and `sin`
 
 # 2. forward operator to function type
 # this simplifies some operator's definition
-gradient(x::Operator, grad, output, args...) =
-    gradient(x.f, grad, output, args...)
+gradient(x::Operator, grad, output, args...; kwargs...) =
+    gradient(x.f, grad, output, args...; kwargs...)
 
 # gradient(fn, grad, args...) =
 #     error(
@@ -231,18 +231,18 @@ gradient(x::Operator, grad, output, args...) =
 #         "3. gradient(op::Trait.Broadcasted{typeof($fn)}, grad, args...)\n"
 #     )
 
-gradient(fn, grad, output, args...) =
+gradient(fn, grad, output, args...; kwargs...) =
     error(
         "gradient of operator $fn is not defined\n",
         "Possible Fix:\n",
         "define one of the following:\n",
-        "1. gradient(::typeof($fn), grad, output, args...)\n",
-        "2. gradient(op::Trait.Method{typeof($fn)}, grad, output, args...)\n",
-        "3. gradient(op::Trait.Broadcasted{typeof($fn)}, grad, output, args...)\n"
+        "1. gradient(::typeof($fn), grad, output, args...; kwargs...)\n",
+        "2. gradient(op::Trait.Method{typeof($fn)}, grad, output, args...; kwargs...)\n",
+        "3. gradient(op::Trait.Broadcasted{typeof($fn)}, grad, output, args...; kwargs...)\n"
     )
 
 
-register(f, args...) = CachedNode(f, args)
+register(f, args...; kwargs...) = CachedNode(f, args...; kwargs...)
 ################################
 # mutable struct Tracked{T} <: AbstractNode
 #     value::T
