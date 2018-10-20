@@ -17,8 +17,6 @@ and [PyTorch](https://github.com/pytorch/pytorch)
 
 Every operation will directly return a `CachedNode`, which constructs a computation
 graph dynamically without using a tape.
-Although performance is the crucial goal of this AD package. It is actually faster than
-several packages and even PyTorch itself.
 
 The simplicity provides us a faster development, while waiting for those Cassette-based
 AD packages like [Zygote.jl](https://github.com/FluxML/Zygote.jl)
