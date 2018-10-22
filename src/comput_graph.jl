@@ -160,6 +160,15 @@ function backward(x::Variable, grad)
     nothing
 end
 
+function backward(x::Variable, grad::SubArray)
+    if isdefined(x, :grad)
+        x.grad += grad
+    else
+        x.grad = copyto!(similar(x.value), grad)
+    end
+    nothing
+end
+
 backward(node::CachedNode, grad) = backward(node, node.node.f, grad)
 backward(node::CachedNode, op::Operator, grad) = backward(node, op.f, grad)
 
