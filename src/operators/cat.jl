@@ -16,6 +16,12 @@ Base.hcat(A::NAR...) = cat(A...; dims=Val(2))
 
 gradient(::typeof(Base.cat), grad, output, As...; dims) = uncat(dims, grad, As...)
 
+"""
+    uncat(dims, cat_output, xs...) -> Vector{SubArray}
+
+The reverse operation of [`cat`](@ref), it will return corresponding [`view`](@ref) of
+the inputs of a `cat`.
+"""
 uncat(dims, cat_output, xs...) = _uncat(Base.dims2cat(dims), cat_output, xs...)
 
 function _uncat(catdims, cat_output, xs...)

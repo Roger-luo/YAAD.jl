@@ -1,3 +1,10 @@
+"""
+    ComputGraphStyle <: Broadcast.BroadcastStyle
+
+This style of broadcast will forward the broadcast expression
+to be registered in a computation graph, rather than directly
+calculate it.
+"""
 struct ComputGraphStyle <: Broadcast.BroadcastStyle end
 Base.BroadcastStyle(::Type{<:AbstractNode}) = ComputGraphStyle()
 Broadcast.BroadcastStyle(s::ComputGraphStyle, x::Broadcast.BroadcastStyle) = s

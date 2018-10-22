@@ -4,28 +4,61 @@ export register
 
 # export register!
 
+"""
+    Operator
+
+Abstract type for operators in the computation graph.
+"""
 abstract type Operator end
 
+"""
+    Trait
+
+This module contains function traits as a subtype of [`Operator`](@ref).
+"""
 module Trait
 import YAAD: Operator
 
+"""
+    Method{FT} <: Operator
+
+This trait wraps a callable object in Julia (usually a `Function`).
+"""
 struct Method{FT} <: Operator
     f::FT
 end
 
+"""
+    Broadcasted{FT} <: Operator
+
+This trait wraps a callable object that being broadcasted. It will help to
+dispatch different gradient methods overloaded for broadcasted operation
+comparing to [`Method`](@ref).
+"""
 struct Broadcasted{FT} <: Operator
     f::FT
 end
 end # Trait
 
+"""
+    AbstractNode
+
+Abstract type for nodes in computation graph.
+"""
 abstract type AbstractNode end
+
+"""
+    LeafNode <: AbstractNode
+
+Abstract type for leaf nodes in a computation graph.
+"""
 abstract type LeafNode <: AbstractNode end
 
 """
     Variable{T} <: LeafNode
 
 A kind of leaf node. A general type for variables in a comput-graph.
-The gradient will be accumulated to `var.grad`.
+Similar to PyTorch's Variable, gradient will be accumulated to `var.grad`.
 """
 mutable struct Variable{T} <: LeafNode
     value::T
@@ -63,8 +96,6 @@ mutable struct CachedNode{NT <: AbstractNode, OutT} <: AbstractNode
     output::OutT
 end
 
-# CachedNode(f, args, output) = CachedNode(Node(f, args), output)
-
 function CachedNode(f, args...; kwargs...)
     node = Node(f, args, kwargs.data)
     output = forward(node)
@@ -77,6 +108,27 @@ Base.similar(x::AbstractNode) = Variable(similar(value(x)))
 Base.similar(x::AbstractNode, dims::Dims) = Variable(similar(value(x), dims))
 Base.similar(x::AbstractNode, element_type::Type{S}, dims::Dims) where S = Variable(similar(value(x), element_type, dims))
 Base.axes(x::AbstractNode) = axes(value(x))
+
+"""
+    arg(node, i) -> ArgumentType
+
+Returns the `i`-th argument of the call in `node`.
+"""
+function arg end
+
+"""
+    args(node) -> Tuple
+
+Returns the arguments of the call in `node`.
+"""
+function args end
+
+"""
+    operator(node) -> YAAD.Operator
+
+Returns the operator called in this node.
+"""
+function operator end
 
 arg(x::Node, i::Int) = x.args[i]
 args(x::Node) = x.args
@@ -230,16 +282,6 @@ gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.
 gradient(x::Operator, grad, output, args...; kwargs...) =
     gradient(x.f, grad, output, args...; kwargs...)
 
-# gradient(fn, grad, args...) =
-#     error(
-#         "gradient of operator $fn is not defined\n",
-#         "Possible Fix:\n",
-#         "define one of the following:\n",
-#         "1. gradient(::typeof($fn), grad, args...)\n",
-#         "2. gradient(op::Trait.Method{typeof($fn)}, grad, args...)\n",
-#         "3. gradient(op::Trait.Broadcasted{typeof($fn)}, grad, args...)\n"
-#     )
-
 gradient(fn, grad, output, args...; kwargs...) =
     error(
         "gradient of operator $fn is not defined\n",
@@ -250,33 +292,12 @@ gradient(fn, grad, output, args...; kwargs...) =
         "3. gradient(op::Trait.Broadcasted{typeof($fn)}, grad, output, args...; kwargs...)\n"
     )
 
+"""
+    register(f, args...; kwargs...)
 
+This is just a alias for constructing a `CachedNode`. But notice this function
+is used for register a node in `tape` in the global tape version implementation:
+
+https://github.com/Roger-luo/YAAD.jl/tree/tape
+"""
 register(f, args...; kwargs...) = CachedNode(f, args...; kwargs...)
-################################
-# mutable struct Tracked{T} <: AbstractNode
-#     value::T
-# end
-#
-# # forward(x::Tracked) = x
-#
-# const GLOBAL_TAPE = IdDict{Tracked, AbstractNode}()
-#
-# register!(tape::IdDict, x) = (tracked = Tracked(x); tape[tracked] = Variable(x); tracked)
-#
-# function register!(tape::IdDict, f, args)
-#     node = Node(f, args)
-#     output = forward(node)
-#     cached = CachedNode(node, output)
-#     tracked = Tracked(output)
-#     tape[tracked] = cached
-#     tracked
-# end
-#
-# register(f, args...) = register!(GLOBAL_TAPE, f, args)
-#
-# backward(x::Tracked{T}, grad=one(T)) where T = backward(GLOBAL_TAPE, x, grad)
-#
-# function backward(tape::IdDict, x::Tracked{T}, grad=one(T)) where T
-#     node = tape[x]
-#     backward(node, grad)
-# end

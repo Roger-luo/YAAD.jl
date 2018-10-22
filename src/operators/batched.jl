@@ -1,12 +1,15 @@
 export Batched
 
 """
-Batched operation in Julia
+Batched operation in Julia.
+
+This module wraps some useful batched operation with a plain
+for-loop on CPU. All the functions in this module are defined
+with gradients in YAAD.
 """
 module Batched
 import LinearAlgebra
 import LinearAlgebra: BLAS
-# export gemm!, gemm, tr!, tr
 
 # last dim is batch dim
 function gemm!(tA::Char, tB::Char, alpha::T, A::AbstractArray{T, 3}, B::AbstractArray{T, 3}, beta::T, C::AbstractArray{T, 3}) where T
