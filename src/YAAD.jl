@@ -14,6 +14,7 @@ include("operators/broadcast.jl")
 include("operators/math.jl")
 include("operators/linalg.jl")
 include("operators/array.jl")
+include("operators/cat.jl")
 
 
 # printings
