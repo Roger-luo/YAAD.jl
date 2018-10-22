@@ -22,7 +22,6 @@ function get_numerical_jacobian(f, inputs...; target=inputs, eps=1e-3)
     for (x_tensor, d_tensor) in zip(x_tensors, jacobian)
         for (d_idx, x_idx) in enumerate(eachindex(x_tensor))
             orig = x_tensor[x_idx]
-            @show x_idx
             x_tensor[x_idx] = orig - eps
             outa = copy(value(f(inputs...)))
             x_tensor[x_idx] = orig + eps

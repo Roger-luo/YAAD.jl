@@ -6,6 +6,8 @@ for (mod, name, nargs) in keys(DiffRules.DEFINED_DIFFRULES)
     if nargs == 1
         df_ex = DiffRules.diffrule(mod, name, :x)
 
+        name === :abs && continue # exclude abs, it cannot be directly broadcasted
+
         @eval begin
             $(f_ex_head)(x::AbstractNode) = register($(f_ex_head), x)
             gradient(::typeof($(f_ex_head)), grad, output, x) = (grad * $df_ex, )
@@ -29,3 +31,16 @@ for (mod, name, nargs) in keys(DiffRules.DEFINED_DIFFRULES)
         @info "unknown operator $name"
     end
 end
+
+
+Base.abs(x::AbstractNode) = register(Base.abs, x)
+
+@inline abs_gradient(x::Number) =
+    if signbit(x)
+        -one(x)
+    else
+        one(x)
+    end
+
+gradient(::typeof(Base.abs), grad, output, x) = (grad * abs_gradient(x), )
+gradient(::Trait.Broadcasted{typeof(Base.abs)}, grad, output, x) = (@.(grad * abs_gradient(x)), )

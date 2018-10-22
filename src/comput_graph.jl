@@ -124,6 +124,13 @@ Returns the arguments of the call in `node`.
 function args end
 
 """
+    kwargs(node) -> NamedTuple
+
+Returns the keyword arguements of the call in `node`.
+"""
+function kwargs end
+
+"""
     operator(node) -> YAAD.Operator
 
 Returns the operator called in this node.
@@ -132,10 +139,12 @@ function operator end
 
 arg(x::Node, i::Int) = x.args[i]
 args(x::Node) = x.args
+kwargs(x::Node) = x.kwargs
 operator(x::Node) = x.f
 
 arg(x::CachedNode, i::Int) = x.node.args[i]
 args(x::CachedNode) = x.node.args
+kwargs(x::CachedNode) = x.node.kwargs
 operator(x::CachedNode) = x.node.f
 
 Base.eltype(x::AbstractNode) = eltype(value(x))

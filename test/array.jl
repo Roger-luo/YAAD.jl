@@ -1,5 +1,7 @@
-using YAAD
+using Test, YAAD, YAAD.TestUtils
 
-t = Variable(rand(2, 2, 2, 3))
-
-view(t, :, :, :, 1)
+@test "index and slice" begin
+    gradcheck(x->x[:, 2, :, 1], Variable(rand(2, 2, 2, 3)))
+    gradcheck(x->view(x, :, :, :, 1), Variable(rand(2, 2, 2, 3)))
+    gradcheck(x->selectdim(x, 2, 1), Variable(rand(2, 2, 2, 3)))
+end

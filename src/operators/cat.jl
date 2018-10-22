@@ -32,7 +32,7 @@ function _uncat(catdims, cat_output, xs...)
     inds = Vector{UnitRange{Int}}(undef, N)
     concat = copyto!(zeros(Bool, N), catdims)
 
-    rs = Vector{SubArray}(undef, length(xs))
+    rs = Vector{AbstractArray}(undef, length(xs))
     @inbounds for (k, x) in enumerate(xs)
         for i in 1:N
             if concat[i]
@@ -42,8 +42,8 @@ function _uncat(catdims, cat_output, xs...)
                 inds[i] = 1:shape[i]
             end
         end
-        I::NTuple{ndims(x), UnitRange{Int}} = (inds[1:ndims(x)]...,)
-        rs[k] = view(cat_output, I...)
+        I::NTuple{N, UnitRange{Int}} = (inds...,)
+        rs[k] = reshape(view(cat_output, I...), size(x))
     end
     return rs
 end
