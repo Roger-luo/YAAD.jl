@@ -1,1 +1,1 @@
-using Documenter
+using Documenter, YAAD
