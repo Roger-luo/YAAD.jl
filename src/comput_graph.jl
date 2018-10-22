@@ -1,4 +1,4 @@
-export AbstractNode, LeafNode
+export AbstractNode, Value
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
 
@@ -16,23 +16,33 @@ end
 struct Broadcasted{FT} <: Operator
     f::FT
 end
+
 end # Trait
 
 abstract type AbstractNode end
-abstract type LeafNode <: AbstractNode end
+abstract type Value{T} <: AbstractNode end
 
 """
-    Variable{T} <: LeafNode
+    Variable{T} <: Value{T}
 
 A kind of leaf node. A general type for variables in a comput-graph.
 The gradient will be accumulated to `var.grad`.
 """
-mutable struct Variable{T} <: LeafNode
+mutable struct Variable{T} <: Value{T}
     value::T
     grad::T
 
     Variable(val::T) where T = new{T}(val)
     Variable(val::T, grad::T) where T = new{T}(val)
+end
+
+"""
+    Tracked{T} <: Value{T}
+
+Temporary value for non-leaf nodes in a computation graph.
+"""
+mutable struct Tracked{T} <: Value{T}
+    value::T
 end
 
 """
@@ -108,7 +118,7 @@ function value(x::T) where {T <: AbstractNode}
     )
 end
 
-value(x::Variable) = x.value
+value(x::Value) = x.value
 value(x::CachedNode) = value(x.output)
 
 """
@@ -125,7 +135,15 @@ function forward end
 
 forward(x) = x
 forward(x::Colon) = x
-forward(node::LeafNode) = value(node)
+forward(node::Variable) = value(node)
+
+function forward(tape, x::Tracked)
+    haskey(tape, x) || error("this is not a tracked value in any computation graph")
+    node = tape[x]
+    x.value = forward(node)
+    x.value
+end
+
 forward(node::Node) = forward(node.f, map(forward, node.args)...; map(forward, node.kwargs)...)
 forward(node::CachedNode) = (node.output = forward(node.node))
 forward(op::Operator, args...; kwargs...) = op.f(args...; kwargs...)
@@ -150,6 +168,7 @@ function backward end
 # return nothing for non-node types
 backward(x, grad) = nothing
 backward(x::AbstractNode) = backward(x::AbstractNode, one(eltype(x)))
+backward(x::Variable) = error("cannot back-propagation from a leaf node")
 
 function backward(x::Variable, grad)
     if isdefined(x, :grad)
@@ -160,20 +179,40 @@ function backward(x::Variable, grad)
     nothing
 end
 
-backward(node::CachedNode, grad) = backward(node, node.node.f, grad)
-backward(node::CachedNode, op::Operator, grad) = backward(node, op.f, grad)
+function backward(tape::WeakKeyIdDict, x::Tracked{T}, grad=one(T)) where T
+    haskey(tape, x) || error("this is not a tracked value in any computation graph")
+    node = tape[x]
+    backward(node, grad, x.value)
+end
 
-function backward(node::CachedNode, f, grad)
-    backward_type_assert(node, grad)
-    # TODO: replace with @assert when there is a compiler option for it
-    @boundscheck backward_size_assert(node, grad)
+backward(node::Node, grad, output) = backward(node, node.f, grad, output)
+backward(node::Node, op::Operator, grad, output) = backward(node, op.f, grad, output)
 
-    grad_inputs = gradient(node, grad)
+function backward(node::Node, f, grad, output)
+    backward_type_assert(node, grad, output)
+    @boundscheck backward_size_assert(node, grad, output)
+
+    grad_inputs = gradient(node, grad, output)
     for (each, each_grad) in zip(args(node), grad_inputs)
         backward(each, each_grad)
     end
     nothing
 end
+
+# backward(node::CachedNode, grad) = backward(node, node.node.f, grad)
+# backward(node::CachedNode, op::Operator, grad) = backward(node, op.f, grad)
+
+# function backward(node::CachedNode, f, grad)
+#     backward_type_assert(node, grad)
+#     # TODO: replace with @assert when there is a compiler option for it
+#     @boundscheck backward_size_assert(node, grad)
+#
+#     grad_inputs = gradient(node, grad)
+#     for (each, each_grad) in zip(args(node), grad_inputs)
+#         backward(each, each_grad)
+#     end
+#     nothing
+# end
 
 """
     backward_type_assert(node, grad)
@@ -184,23 +223,38 @@ function backward_type_assert end
 
 # mute the compiler error msg
 backward_type_assert(args...) = true
-
-backward_type_assert(node::CachedNode{<:AbstractNode, T}, grad::T) where T = true
-# exclude arrays
-backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where
+backward_type_assert(node::Node, grad::T, output::T) where T = true
+backward_type_assert(node::Node, grad::T1, output::T2) where
     {T, N, T1 <: AbstractArray{T, N}, T2 <: AbstractArray{T, N}} = true
-backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where {T1, T2} =
+backward_type_assert(node::Node, grad::T1, output::T2) where {T1, T2} =
     error("Gradient is expected to have the same",
-          " type with outputs, expected $T1",
-          " got $T2")
+          " type with outputs, expected $T2",
+          " got $T1")
 
-function backward_size_assert(node::CachedNode, grad)
-    size(node.output) == size(grad) ||
+function backward_size_assert(node::Node, grad, output)
+    size(output) == size(grad) ||
         error(
             "gradient should have the same size with output,",
             " expect size $(size(node.output)), got $(size(grad))"
         )
 end
+
+# backward_type_assert(node::CachedNode{<:AbstractNode, T}, grad::T) where T = true
+# # exclude arrays
+# backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where
+#     {T, N, T1 <: AbstractArray{T, N}, T2 <: AbstractArray{T, N}} = true
+# backward_type_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where {T1, T2} =
+#     error("Gradient is expected to have the same",
+#           " type with outputs, expected $T1",
+#           " got $T2")
+
+# function backward_size_assert(node::CachedNode, grad)
+#     size(node.output) == size(grad) ||
+#         error(
+#             "gradient should have the same size with output,",
+#             " expect size $(size(node.output)), got $(size(grad))"
+#         )
+# end
 
 """
     gradient(node, grad)
@@ -211,7 +265,8 @@ function gradient end
 
 ## CachedNode
 # 1. general interface
-gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...; map(value, x.node.kwargs)...)
+# gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...; map(value, x.node.kwargs)...)
+gradient(x::Node, grad, output) = gradient(x.f, grad, output, map(value, x.args)...; map(value, x.kwargs)...)
 
 # NOTE: operators help to define different grads when the fn is the same
 # e.g Broadcasted{typeof(sin)} and `sin`
@@ -242,32 +297,20 @@ gradient(fn, grad, output, args...; kwargs...) =
     )
 
 
-register(f, args...; kwargs...) = CachedNode(f, args...; kwargs...)
+# register(f, args...; kwargs...) = CachedNode(f, args...; kwargs...)
 ################################
-# mutable struct Tracked{T} <: AbstractNode
-#     value::T
-# end
-#
-# # forward(x::Tracked) = x
-#
-# const GLOBAL_TAPE = IdDict{Tracked, AbstractNode}()
-#
-# register!(tape::IdDict, x) = (tracked = Tracked(x); tape[tracked] = Variable(x); tracked)
-#
-# function register!(tape::IdDict, f, args)
-#     node = Node(f, args)
-#     output = forward(node)
-#     cached = CachedNode(node, output)
-#     tracked = Tracked(output)
-#     tape[tracked] = cached
-#     tracked
-# end
-#
-# register(f, args...) = register!(GLOBAL_TAPE, f, args)
-#
-# backward(x::Tracked{T}, grad=one(T)) where T = backward(GLOBAL_TAPE, x, grad)
-#
-# function backward(tape::IdDict, x::Tracked{T}, grad=one(T)) where T
-#     node = tape[x]
-#     backward(node, grad)
-# end
+
+function register!(tape::WeakKeyIdDict, f, args...; kwargs...)
+    node = Node(f, args, kwargs.data)
+    output = forward(node)
+    tracked = Tracked(output)
+    tape[tracked] = node
+    tracked
+end
+
+const GLOBAL_TAPE = WeakKeyIdDict{Tracked, AbstractNode}()
+
+forward(x::Tracked) = forward(GLOBAL_TAPE, x)
+backward(x::Tracked, grad) = backward(GLOBAL_TAPE, x, grad)
+
+register(f, args...; kwargs...) = register!(GLOBAL_TAPE, f, args...; kwargs...)

@@ -1,4 +1,4 @@
-Base.getindex(x::AbstractNode, inds...) = register(Base.getindex, x, inds...)
+Base.getindex(x::Value, inds...) = register(Base.getindex, x, inds...)
 
 function gradient(::typeof(Base.getindex), grad, output, x::AbstractArray, inds...)
     grad_output = fill!(similar(x), 0)
@@ -8,7 +8,7 @@ end
 
 gradient(::typeof(Base.getindex), grad, output, x::Number, ind::Int) = (grad, )
 
-Base.selectdim(x::AbstractNode, d, i) = register(Base.selectdim, x, d, i)
+Base.selectdim(x::Value, d, i) = register(Base.selectdim, x, d, i)
 
 function gradient(::typeof(Base.selectdim), grad, output, x::AbstractArray, d, i)
     grad_output = fill!(similar(x), 0)
@@ -17,7 +17,7 @@ function gradient(::typeof(Base.selectdim), grad, output, x::AbstractArray, d, i
     (grad_output, )
 end
 
-Base.view(x::AbstractNode, inds...) = register(Base.view, x, inds...)
+Base.view(x::Value, inds...) = register(Base.view, x, inds...)
 
 function gradient(::typeof(Base.view), grad, output, x::AbstractArray, inds...)
     grad_output = fill!(similar(x), 0)

@@ -1,6 +1,6 @@
 using LinearAlgebra
 
-LinearAlgebra.tr(x::AbstractNode) = register(LinearAlgebra.tr, x)
+LinearAlgebra.tr(x::Value) = register(LinearAlgebra.tr, x)
 gradient(::typeof(tr), grad, output, x) = (grad * Matrix(I, size(x)), )
 
 gradient(::typeof(transpose), grad, output, x::AbstractMatrix) = (transpose(grad), )
