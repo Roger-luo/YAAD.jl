@@ -36,7 +36,7 @@ function _uncat(catdims, cat_output, xs...)
                 inds[i] = 1:shape[i]
             end
         end
-        I::NTuple{N, UnitRange{Int}} = (inds...,)
+        I::NTuple{ndims(x), UnitRange{Int}} = (inds[1:ndims(x)]...,)
         rs[k] = view(cat_output, I...)
     end
     return rs
