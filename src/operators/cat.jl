@@ -19,8 +19,8 @@ gradient(::typeof(Base.cat), grad, output, As...; dims) = uncat(dims, grad, As..
 """
     uncat(dims, cat_output, xs...) -> Vector{SubArray}
 
-The reverse operation of [`cat`](@ref), it will return corresponding [`view`](@ref) of
-the inputs of a `cat`.
+The reverse operation of [`Base.cat`],
+it will return corresponding [`Base.view`] of the inputs of a `cat`.
 """
 uncat(dims, cat_output, xs...) = _uncat(Base.dims2cat(dims), cat_output, xs...)
 
