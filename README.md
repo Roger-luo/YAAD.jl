@@ -1,6 +1,6 @@
 # YAAD.jl
 
-[![Build Status](https://travis-ci.com/Roger-luo/YAAD.jl.svg?branch=master)](https://travis-ci.com/Roger-luo/YAAD.jl)
+[![Build Status](https://travis-ci.org/Roger-luo/YAAD.jl.svg?branch=master)](https://travis-ci.org/Roger-luo/YAAD.jl)
 
 Yet Another Automatic Differentiation package in Julia.
 
