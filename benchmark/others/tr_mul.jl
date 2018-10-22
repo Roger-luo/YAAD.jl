@@ -1,5 +1,3 @@
-
-
 using BenchmarkTools, LinearAlgebra
 import Zygote
 import Zygote: @grad
@@ -20,8 +18,7 @@ function bench_tr_mul_autograd(x1, x2)
 end
 
 function bench_tr_mul_zygote(x1, x2)
-    g = Zygote.gradient(()->tr(x1 * x2), Zygote.Params([x1, x2]))
-    g[x1], g[x2]
+    Zygote.gradient((x1, x2)->tr(x1 * x2), x1, x2)
 end
 
 xv, yv = rand(30, 30), rand(30, 30)
