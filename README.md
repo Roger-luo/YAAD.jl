@@ -14,13 +14,15 @@ pkg> add https://github.com/Roger-luo/YAAD.jl.git#master
 
 ## Introduction
 
+You may want to check my blog post about it: [Implement AD with Julia in ONE day](http://blog.rogerluo.me/2018/10/23/write-an-ad-in-one-day/)
+
 This project aims to provide a similar interface with PyTorch's autograd, while
 keeping things simple. The core implementation only contains a straight-forward
 200 line of Julia. It is highly inspired by [AutoGrad.jl](https://github.com/denizyuret/AutoGrad.jl)
 and [PyTorch](https://github.com/pytorch/pytorch)
 
 Every operation will directly return a `CachedNode`, which constructs a computation
-graph dynamically without using a tape.
+graph dynamically without using a global tape.
 
 ## Usage
 
