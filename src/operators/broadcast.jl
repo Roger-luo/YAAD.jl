@@ -18,7 +18,9 @@ function Broadcast.broadcasted(::ComputGraphStyle, f, args...)
 end
 
 Broadcast.materialize(x::AbstractNode) = register(Broadcast.materialize, x)
-gradient(::typeof(Broadcast.materialize), grad, output, x) = (grad, )
+
+# NOTE: we don't need it anymore since we implemented backward for materialize
+# gradient(::typeof(Broadcast.materialize), grad, output, x) = (grad, )
 
 # directly forward to broadcasted
 function backward(node::CachedNode, ::typeof(Broadcast.materialize), grad)

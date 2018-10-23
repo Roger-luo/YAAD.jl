@@ -185,6 +185,7 @@ For function calls.
 function forward end
 
 forward(x) = x
+forward(x::NT) where {NT <: AbstractNode} = error("forward method is not implemented for node type: $NT")
 forward(x::Colon) = x
 forward(node::LeafNode) = value(node)
 forward(node::Node) = forward(node.f, map(forward, node.args)...; map(forward, node.kwargs)...)

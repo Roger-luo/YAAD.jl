@@ -31,3 +31,5 @@ end
 @test gradcheck(x->Broadcast.broadcasted(acscd, x), Variable(rand(10, 10) .+ 2.0))
 
 end # math.jl
+
+gradcheck(x->Broadcast.broadcasted(Base.csch, x), Variable(rand(10, 10)))
