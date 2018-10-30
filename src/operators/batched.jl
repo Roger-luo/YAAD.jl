@@ -107,13 +107,13 @@ gemm!(A::Transpose{NBatch, T}, B::ScalarIdentity{NBatch, K, T}, C::AbstractArray
 end # Batched
 
 
-Batched.gemm(A::AbstractNode, B::AbstractNode) = register(Batched.gemm, A, B)
+Batched.gemm(A::Value, B::Value) = register(Batched.gemm, A, B)
 
 function gradient(::typeof(Batched.gemm), grad, output, A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
     Batched.gemm(grad, transpose(B)), Batched.gemm(transpose(A), grad)
 end
 
-Batched.tr(A::AbstractNode) = register(Batched.tr, A)
+Batched.tr(A::Value) = register(Batched.tr, A)
 
 function gradient(::typeof(Batched.tr), grad, output, A::AbstractArray{T, 3}) where T
     (Batched.ScalarIdentity{size(A, 3), size(A, 1)}(grad), )

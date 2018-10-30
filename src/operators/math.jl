@@ -9,7 +9,7 @@ for (mod, name, nargs) in keys(DiffRules.DEFINED_DIFFRULES)
         name === :abs && continue # exclude abs, it cannot be directly broadcasted
 
         @eval begin
-            $(f_ex_head)(x::AbstractNode) = register($(f_ex_head), x)
+            $(f_ex_head)(x::Value) = register($(f_ex_head), x)
             gradient(::typeof($(f_ex_head)), grad, output, x) = (grad * $df_ex, )
             gradient(mt::Trait.Broadcasted{typeof($f_ex_head)}, grad, output, x) = (@.(grad * $(df_ex)), )
         end
@@ -18,9 +18,9 @@ for (mod, name, nargs) in keys(DiffRules.DEFINED_DIFFRULES)
 
         @eval begin
 
-            $(f_ex_head)(x1::AbstractNode, x2) = register($f_ex_head, x1, x2)
-            $(f_ex_head)(x1, x2::AbstractNode) = register($f_ex_head, x1, x2)
-            $(f_ex_head)(x1::AbstractNode, x2::AbstractNode) = register($f_ex_head, x1, x2)
+            $(f_ex_head)(x1::Value, x2) = register($f_ex_head, x1, x2)
+            $(f_ex_head)(x1, x2::Value) = register($f_ex_head, x1, x2)
+            $(f_ex_head)(x1::Value, x2::Value) = register($f_ex_head, x1, x2)
 
             gradient(::typeof($f_ex_head), grad, output, x, y) =
                 (grad * $(df_ex[1]), grad * $(df_ex[2]))
@@ -33,7 +33,7 @@ for (mod, name, nargs) in keys(DiffRules.DEFINED_DIFFRULES)
 end
 
 
-Base.abs(x::AbstractNode) = register(Base.abs, x)
+Base.abs(x::Value) = register(Base.abs, x)
 
 @inline abs_gradient(x::Number) =
     if signbit(x)
@@ -46,7 +46,7 @@ gradient(::typeof(Base.abs), grad, output, x) = (grad * abs_gradient(x), )
 gradient(::Trait.Broadcasted{typeof(Base.abs)}, grad, output, x) = (@.(grad * abs_gradient(x)), )
 
 
-Base.sum(x::AbstractNode) = register(Base.sum, x)
+Base.sum(x::Value) = register(Base.sum, x)
 
 function gradient(::typeof(Base.sum), grad::Number, output, x::AbstractArray)
     (fill!(similar(x), grad), )

@@ -3,7 +3,7 @@ module TestUtils
 export gradcheck
 
 using YAAD
-import YAAD: AbstractNode
+import YAAD: Value
 
 make_jacobian(input::AbstractArray, num_out::Int) = (zeros(eltype(input), length(input), num_out), )
 make_jacobian(input::Variable, num_out::Int) = make_jacobian(value(input), num_out)
@@ -12,7 +12,7 @@ make_jacobian(inputs::Tuple, num_out::Int) = Tuple(first(make_jacobian(each, num
 zero_like(x::T) where {T <: Number} = zero(T)
 zero_like(x) = fill!(similar(x), 0)
 zero_like(x::Broadcast.Broadcasted) = zero_like(Broadcast.materialize(x))
-zero_like(x::AbstractNode) = zero_like(value(x))
+zero_like(x::Value) = zero_like(value(x))
 
 function get_numerical_jacobian(f, inputs...; target=inputs, eps=1e-3)
     output_size = length(value(f(inputs...)))
@@ -38,7 +38,7 @@ end
 _set_numerical_jacobian_elem!(d_tensor, d_idx, r::AbstractArray) = d_tensor[d_idx, :] = reshape(r, :)
 _set_numerical_jacobian_elem!(d_tensor, d_idx, r::Number) = d_tensor[d_idx, 1] = r
 
-function get_analytical_jacobian(inputs, output::AbstractNode)
+function get_analytical_jacobian(inputs, output::Value)
     jacobian = make_jacobian(inputs, length(value(output)))
     jacobian_reentrant = make_jacobian(inputs, length(value(output)))
     grad_output = zero_like(output)
@@ -54,7 +54,7 @@ function get_analytical_jacobian(inputs, output::AbstractNode)
     jacobian, reentrant, correct_grad_sizes
 end
 
-function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_output::AbstractArray, output::AbstractNode)
+function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_output::AbstractArray, output::Value)
     for i in 1:length(grad_output)
         grad_output = fill!(grad_output, 0)
         grad_output[i] = 1
@@ -69,7 +69,7 @@ function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_
     jacobian, jacobian_reentrant
 end
 
-function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_output::Number, output::AbstractNode)
+function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_output::Number, output::Value)
     grad_output = 1
     for jacobian_c in (jacobian, jacobian_reentrant)
         grads_input = gradient(output, grad_output)
@@ -83,7 +83,7 @@ function _analytical_jacobian!(jacobian::Tuple, jacobian_reentrant::Tuple, grad_
 end
 
 
-_differentiable_outputs(x) = Tuple(o for o in _as_tuple(x) if o isa AbstractNode)
+_differentiable_outputs(x) = Tuple(o for o in _as_tuple(x) if o isa Value)
 _as_tuple(x) = (x, )
 _as_tuple(x::Tuple) = x
 

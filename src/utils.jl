@@ -13,7 +13,7 @@ function zero_grad!(x)
     x
 end
 
-function zero_grad!(x::AbstractNode)
+function zero_grad!(x::Union{CachedNode, Node})
     for each in args(x)
         zero_grad!(each)
     end

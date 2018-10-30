@@ -1,4 +1,4 @@
-export AbstractNode, LeafNode
+export AbstractNode, Value
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
 
@@ -53,19 +53,19 @@ Abstract type for nodes in computation graph.
 abstract type AbstractNode end
 
 """
-    LeafNode <: AbstractNode
+    Value{T} <: AbstractNode
 
-Abstract type for leaf nodes in a computation graph.
+Abstract type for nodes contains a value in a computation graph.
 """
-abstract type LeafNode <: AbstractNode end
+abstract type Value{T} <: AbstractNode end
 
 """
-    Variable{T} <: LeafNode
+    Variable{T} <: Value{T}
 
 A kind of leaf node. A general type for variables in a comput-graph.
 Similar to PyTorch's Variable, gradient will be accumulated to `var.grad`.
 """
-mutable struct Variable{T} <: LeafNode
+mutable struct Variable{T} <: Value{T}
     value::T
     grad::T
 
@@ -96,7 +96,7 @@ Stores the cache of output with type `OutT` from a node of
 type `NT` in comput-graph. CachedNode is mutable, its output
 can be updated by [`forward`](@ref).
 """
-mutable struct CachedNode{NT <: AbstractNode, OutT} <: AbstractNode
+mutable struct CachedNode{NT <: AbstractNode, OutT} <: Value{OutT}
     node::NT
     output::OutT
 end
@@ -192,7 +192,7 @@ function forward end
 forward(x) = x
 forward(x::NT) where {NT <: AbstractNode} = error("forward method is not implemented for node type: $NT")
 forward(x::Colon) = x
-forward(node::LeafNode) = value(node)
+forward(node::Value) = value(node)
 forward(node::Node) = forward(node.f, map(forward, node.args)...; map(forward, node.kwargs)...)
 forward(node::CachedNode) = (node.output = forward(node.node))
 forward(op::Operator, args...; kwargs...) = op.f(args...; kwargs...)

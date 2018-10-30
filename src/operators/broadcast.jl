@@ -6,18 +6,18 @@ to be registered in a computation graph, rather than directly
 calculate it.
 """
 struct ComputGraphStyle <: Broadcast.BroadcastStyle end
-Base.BroadcastStyle(::Type{<:AbstractNode}) = ComputGraphStyle()
+Base.BroadcastStyle(::Type{<:Value}) = ComputGraphStyle()
 Broadcast.BroadcastStyle(s::ComputGraphStyle, x::Broadcast.BroadcastStyle) = s
 
 # # this enables method traits broadcast as a constant
-Broadcast.broadcastable(x::AbstractNode) = x
+Broadcast.broadcastable(x::Value) = x
 
 function Broadcast.broadcasted(::ComputGraphStyle, f, args...)
     mt = Trait.Broadcasted(f)
     register(mt, args...)
 end
 
-Broadcast.materialize(x::AbstractNode) = register(Broadcast.materialize, x)
+Broadcast.materialize(x::Value) = register(Broadcast.materialize, x)
 
 # NOTE: we don't need it anymore since we implemented backward for materialize
 # gradient(::typeof(Broadcast.materialize), grad, output, x) = (grad, )
