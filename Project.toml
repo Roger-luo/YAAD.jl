@@ -1,7 +1,7 @@
 name = "YAAD"
 uuid = "f664b54e-d16c-11e8-3987-f3e95b1ae6e1"
 authors = ["Roger-luo <hiroger@qq.com>"]
-version = "0.1.0"
+version = "0.2.0-DEV"
 
 [deps]
 DiffRules = "b552c78f-8df3-52c6-915a-8e097449b14b"
