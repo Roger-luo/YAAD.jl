@@ -105,14 +105,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "#YAAD.LeafNode",
-    "page": "Home",
-    "title": "YAAD.LeafNode",
-    "category": "type",
-    "text": "LeafNode <: AbstractNode\n\nAbstract type for leaf nodes in a computation graph.\n\n\n\n\n\n"
-},
-
-{
     "location": "#YAAD.Node",
     "page": "Home",
     "title": "YAAD.Node",
@@ -121,11 +113,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "#YAAD.Value",
+    "page": "Home",
+    "title": "YAAD.Value",
+    "category": "type",
+    "text": "Value{T} <: AbstractNode\n\nAbstract type for nodes contains a value in a computation graph.\n\n\n\n\n\n"
+},
+
+{
     "location": "#YAAD.Variable",
     "page": "Home",
     "title": "YAAD.Variable",
     "category": "type",
-    "text": "Variable{T} <: LeafNode\n\nA kind of leaf node. A general type for variables in a comput-graph. Similar to PyTorch\'s Variable, gradient will be accumulated to var.grad.\n\n\n\n\n\n"
+    "text": "Variable{T} <: Value{T}\n\nA kind of leaf node. A general type for variables in a comput-graph. Similar to PyTorch\'s Variable, gradient will be accumulated to var.grad.\n\n\n\n\n\n"
 },
 
 {
