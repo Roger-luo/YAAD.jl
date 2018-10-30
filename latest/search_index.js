@@ -65,11 +65,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "#YAAD.register_parameters",
+    "page": "Home",
+    "title": "YAAD.register_parameters",
+    "category": "function",
+    "text": "register_parameters(x::OperatorType) -> iterator\n\nReturns the iterator of all parameters in the instance x of OperatorType. Note, here, OperatorType does not need to be subtype of Operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "#YAAD.value",
     "page": "Home",
     "title": "YAAD.value",
     "category": "function",
     "text": "value(node)\n\nReturns the value when forwarding at current node. value is different than forward method, value only returns what the node contains, it will throw an error, if this node does not contain anything.\n\n\n\n\n\n"
+},
+
+{
+    "location": "#YAAD.zero_grad!",
+    "page": "Home",
+    "title": "YAAD.zero_grad!",
+    "category": "function",
+    "text": "zero_grad!(var)\n\nclear gradient storage in the whole comput-graph.\n\n\n\n\n\n"
 },
 
 {
