@@ -20,6 +20,8 @@ include("operators/batched.jl")
 # printings
 include("show.jl")
 
+# utils
+include("utils.jl")
 # test utils
 include("test_utils.jl")
 

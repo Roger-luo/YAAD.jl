@@ -28,6 +28,8 @@ struct Method{FT} <: Operator
     f::FT
 end
 
+(op::Method)(args...; kwargs...) = op.f(args...; kwargs...)
+
 """
     Broadcasted{FT} <: Operator
 
@@ -38,6 +40,9 @@ comparing to [`Method`](@ref).
 struct Broadcasted{FT} <: Operator
     f::FT
 end
+
+(op::Broadcasted)(args...; kwargs...) = op.f.(args...; kwargs...)
+
 end # Trait
 
 """
