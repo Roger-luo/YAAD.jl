@@ -24,6 +24,9 @@ and [PyTorch](https://github.com/pytorch/pytorch)
 Every operation will directly return a `CachedNode`, which constructs a computation
 graph dynamically without using a global tape.
 
+**NOTE**: This project is for self-use at the moment, it will be a place for me to do AD related
+experimental coding, I don't guarantee the consistency and stability between versions (different version can be in-compatible). For practical usage, I would suggest you try `Flux.Tracker` or `Zygote`. They may have better performance and are aimed to be non-experimental projects.
+
 ## Usage
 
 It is simple. Mark what you want to differentiate with `Variable`, which contains `value`
