@@ -69,7 +69,7 @@ mutable struct Variable{T} <: Value{T}
     value::T
     grad::T
 
-    Variable(val::T) where T = new{T}(val)
+    Variable(val::T) where T = new{T}(val, zero(val))
     Variable(val::T, grad::T) where T = new{T}(val)
 end
 
@@ -96,7 +96,7 @@ Stores the cache of output with type `OutT` from a node of
 type `NT` in comput-graph. CachedNode is mutable, its output
 can be updated by [`forward`](@ref).
 """
-mutable struct CachedNode{NT <: AbstractNode, OutT} <: Value{OutT}
+struct CachedNode{NT <: AbstractNode, OutT} <: Value{OutT}
     node::NT
     output::OutT
 end
@@ -189,23 +189,24 @@ For function calls.
 """
 function forward end
 
+"""
+    forward!(output, ...) -> output
+"""
+function forward! end
+
 forward(x) = x
 forward(x::NT) where {NT <: AbstractNode} = error("forward method is not implemented for node type: $NT")
 forward(x::Colon) = x
 forward(node::Value) = value(node)
 forward(node::Node) = forward(node.f, map(forward, node.args)...; map(forward, node.kwargs)...)
-forward(node::CachedNode) = (node.output = forward(node.node))
 forward(op::Operator, args...; kwargs...) = op.f(args...; kwargs...)
 forward(op::Trait.Broadcasted, args...) = Broadcast.broadcasted(op.f, args...)
 
-# better error msg
-# NOTE: Colon is a Function, this can have ambiguity
-# we force to use a trait here.
-forward(::Function, args...) =
-    error(
-        "please wrap your operator as subtype of Operator",
-        " directly forward a function may cause ambiguity"
-    )
+# # This allow the evaluation of a static graph
+# forward(node::CachedNode) = forward!(node, node.node) # forward to modify this
+# forward!(v::CachedNode, node::Node) = forward!(v, node.f, map(forward, node.args)...; map(forward, node.kwargs)...)
+# forward!(v::CachedNode, op::Operator, args...; kwargs...) = (v.output = op.f(args...; kwargs...))
+# forward!(v::CachedNode, op::Trait.Broadcasted, args...) = (v.output = Broadcast.broadcasted(op.f, args...))
 
 """
     backward(node) -> nothing
@@ -215,29 +216,27 @@ Backward evaluation of the comput-graph.
 function backward end
 
 # return nothing for non-node types
-backward(x, grad) = nothing
+backward(x, grad) = x
 backward(x::AbstractNode) = backward(x::AbstractNode, one(eltype(x)))
 
 function backward(x::Variable, grad)
-    if isdefined(x, :grad)
-        x.grad += grad
-    else
-        x.grad = grad
-    end
-    nothing
-end
-
-function backward(x::Variable, grad::SubArray)
-    if isdefined(x, :grad)
-        x.grad += grad
-    else
-        x.grad = copyto!(similar(x.value), grad)
-    end
+    x.grad += grad
     nothing
 end
 
 backward(node::CachedNode, grad) = backward(node, node.node.f, grad)
 backward(node::CachedNode, op::Operator, grad) = backward(node, op.f, grad)
+
+@generated function rm_constant_args(args::Tuple)
+    ex = Expr[]
+    for (i, each) in enumerate(args.parameters)
+        push!(ex, :(tuple($i, args[$i])))
+    end
+
+    quote
+        tuple($(ex...))
+    end
+end
 
 function backward(node::CachedNode, f, grad)
     backward_type_assert(node, grad)
@@ -245,6 +244,7 @@ function backward(node::CachedNode, f, grad)
     @boundscheck backward_size_assert(node, grad)
 
     grad_inputs = gradient(node, grad)
+
     for (each, each_grad) in zip(args(node), grad_inputs)
         backward(each, each_grad)
     end
@@ -287,15 +287,17 @@ function gradient end
 
 ## CachedNode
 # 1. general interface
-gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...; map(value, x.node.kwargs)...)
+gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, x.node.args...; x.node.kwargs...)
 
 # NOTE: operators help to define different grads when the fn is the same
 # e.g Broadcasted{typeof(sin)} and `sin`
 
 # 2. forward operator to function type
 # this simplifies some operator's definition
+# unwrap the value here for convenience, but remember to define
+# for different constant sometimes, e.g *(::Value, ::ConstantType) only need to calculate first
 gradient(x::Operator, grad, output, args...; kwargs...) =
-    gradient(x.f, grad, output, args...; kwargs...)
+    gradient(x.f, grad, output, map(value, args)...; kwargs...)
 
 gradient(fn, grad, output, args...; kwargs...) =
     error(

@@ -5,6 +5,7 @@ using Test
 import AutoGrad, YAAD
 
 Zygote.@grad LinearAlgebra.tr(x) = LinearAlgebra.tr(x), Δ-> (Δ * Matrix(I, size(x)), )
+Zygote.@grad Base.:(*)(lhs::Matrix, rhs::Matrix) = gemm(lhs, rhs), grad -> (grad * transpose(rhs), transpose(lhs) * grad)
 
 function bench_tr_mul_yaad(x1, x2)
     z = tr(x1 * x2)
