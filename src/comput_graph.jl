@@ -1,4 +1,6 @@
-export AbstractNode, Value
+# Abstract types
+export AbstractNode, Value, AbstractVariable
+# builtin concrete types
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
 
@@ -60,17 +62,24 @@ Abstract type for nodes contains a value in a computation graph.
 abstract type Value{T} <: AbstractNode end
 
 """
+    AbstractVariable{T} <: Value{T}
+
+Abstract type for variables, variables are types that contains value and gradients.
+"""
+abstract type AbstractVariable{T} <: Value{T} end
+
+"""
     Variable{T} <: Value{T}
 
 A kind of leaf node. A general type for variables in a comput-graph.
 Similar to PyTorch's Variable, gradient will be accumulated to `var.grad`.
 """
-mutable struct Variable{T} <: Value{T}
+struct Variable{T} <: AbstractVariable{T}
     value::T
     grad::T
 
     Variable(val::T) where T = new{T}(val, zero(val))
-    Variable(val::T, grad::T) where T = new{T}(val)
+    Variable(val::T, grad::T) where T = new{T}(val, grad)
 end
 
 """
