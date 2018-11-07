@@ -23,11 +23,9 @@ end
 
 # forward to default
 PrintTrait(var::Number) = ScalarVariable(var)
-PrintTrait(var::Variable{<:Number}) = ScalarVariable(var.value)
-PrintTrait(var::CachedNode{<:AbstractNode, <:Number}) = ScalarVariable(var.output)
-PrintTrait(var::Variable{AT}) where {T, N, AT <: AbstractArray{T, N}} = ArrayVariable{T, N, AT}(var.value)
-PrintTrait(var::CachedNode{NT, AT}) where {T, N, NT, AT <: AbstractArray{T, N}} = ArrayVariable{T, N, AT}(var.output)
-PrintTrait(var::CachedNode{NT, AT}) where {NT, AT} = Other(var)
+PrintTrait(var::Value{<:Number}) = ScalarVariable(value(var))
+PrintTrait(var::Value{AT}) where {T, N, AT <: AbstractArray{T, N}} = ArrayVariable{T, N, AT}(value(var))
+PrintTrait(var::Value{T}) where {T} = Other(var)
 
 Base.size(x::ArrayVariable) = size(x.value)
 Base.getindex(x::ArrayVariable, i...) = getindex(x.value, i...)
