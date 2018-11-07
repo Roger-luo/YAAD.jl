@@ -166,9 +166,9 @@ function value end
 # forward other values
 value(x) = x
 
-function value(x::T) where {T <: AbstractNode}
+function value(x::AbstractNode)
     error(
-        "Expected value in this node $x of type $T ",
+        "Expected value for node type $(typeof(x)) ",
         "check if you defined a non-cached node",
         " or overload value function for your node."
     )
