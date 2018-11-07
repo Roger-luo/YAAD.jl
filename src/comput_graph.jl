@@ -287,7 +287,7 @@ function gradient end
 
 ## CachedNode
 # 1. general interface
-gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, x.node.args...; x.node.kwargs...)
+gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, map(value, x.node.args)...; map(value, x.node.kwargs)...)
 
 # NOTE: operators help to define different grads when the fn is the same
 # e.g Broadcasted{typeof(sin)} and `sin`
@@ -297,7 +297,7 @@ gradient(x::CachedNode, grad) = gradient(x.node.f, grad, x.output, x.node.args..
 # unwrap the value here for convenience, but remember to define
 # for different constant sometimes, e.g *(::Value, ::ConstantType) only need to calculate first
 gradient(x::Operator, grad, output, args...; kwargs...) =
-    gradient(x.f, grad, output, map(value, args)...; kwargs...)
+    gradient(x.f, grad, output, args...; kwargs...)
 
 gradient(fn, grad, output, args...; kwargs...) =
     error(
