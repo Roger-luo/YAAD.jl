@@ -89,11 +89,43 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "#YAAD.AbstractArrayVariable",
+    "page": "Home",
+    "title": "YAAD.AbstractArrayVariable",
+    "category": "type",
+    "text": "AbstractArrayVariable{T, N}\n\nAlias for AbstractVariable, abstract type for variables contains an array.\n\n\n\n\n\n"
+},
+
+{
+    "location": "#YAAD.AbstractMatrixVariable",
+    "page": "Home",
+    "title": "YAAD.AbstractMatrixVariable",
+    "category": "type",
+    "text": "AbstractMatrixVariable{T}\n\nAbstract type for variables contains a matrix. See AbstractVariable for more.\n\n\n\n\n\n"
+},
+
+{
     "location": "#YAAD.AbstractNode",
     "page": "Home",
     "title": "YAAD.AbstractNode",
     "category": "type",
     "text": "AbstractNode\n\nAbstract type for nodes in computation graph.\n\n\n\n\n\n"
+},
+
+{
+    "location": "#YAAD.AbstractVariable",
+    "page": "Home",
+    "title": "YAAD.AbstractVariable",
+    "category": "type",
+    "text": "AbstractVariable{T} <: Value{T}\n\nAbstract type for variables, variables are types that contains value and gradients.\n\n\n\n\n\n"
+},
+
+{
+    "location": "#YAAD.AbstractVectorVariable",
+    "page": "Home",
+    "title": "YAAD.AbstractVectorVariable",
+    "category": "type",
+    "text": "AbstractVectorVariable{T}\n\nAbstract type for variables contains a vector. See AbstractVariable for more.\n\n\n\n\n\n"
 },
 
 {
