@@ -1,5 +1,6 @@
 # Abstract types
-export AbstractNode, Value, AbstractVariable, AbstractArrayVariable, AbstractMatrixVariable, AbstractVectorVariable
+export AbstractNode, Value, ValueType, AbstractVariable,
+       AbstractArrayVariable, AbstractMatrixVariable, AbstractVectorVariable
 # builtin concrete types
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
@@ -60,6 +61,15 @@ abstract type AbstractNode end
 Abstract type for nodes contains a value in a computation graph.
 """
 abstract type Value{T} <: AbstractNode end
+
+"""
+    ValueType{T}
+
+Value types, it can be an [`AbstractVariable`](@ref) contains `T` or just a
+value of type `T`.
+"""
+const ValueType{T} = Union{Value{T}, T}
+
 
 """
     AbstractVariable{T} <: Value{T}
