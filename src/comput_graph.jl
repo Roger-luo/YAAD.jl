@@ -1,5 +1,5 @@
 # Abstract types
-export AbstractNode, Value, AbstractVariable
+export AbstractNode, Value, AbstractVariable, AbstractArrayVariable, AbstractMatrixVariable, AbstractVectorVariable
 # builtin concrete types
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
@@ -67,6 +67,27 @@ abstract type Value{T} <: AbstractNode end
 Abstract type for variables, variables are types that contains value and gradients.
 """
 abstract type AbstractVariable{T} <: Value{T} end
+
+"""
+    AbstractArrayVariable{T, N}
+
+Alias for [`AbstractVariable`](@ref), abstract type for variables contains an array.
+"""
+const AbstractArrayVariable{T, N} = AbstractVariable{AT} where {T, N, AT <: AbstractArray{T, N}}
+
+"""
+    AbstractMatrixVariable{T}
+
+Abstract type for variables contains a matrix. See [`AbstractVariable`](@ref) for more.
+"""
+const AbstractMatrixVariable{T} = AbstractArrayVariable{T, 2}
+
+"""
+    AbstractVectorVariable{T}
+
+Abstract type for variables contains a vector. See [`AbstractVariable`](@ref) for more.
+"""
+const AbstractVectorVariable{T} = AbstractArrayVariable{T, 1}
 
 """
     Variable{T} <: Value{T}
