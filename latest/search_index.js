@@ -225,30 +225,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "#YAAD.Batched",
-    "page": "Home",
-    "title": "YAAD.Batched",
-    "category": "module",
-    "text": "Batched operation in Julia.\n\nThis module wraps some useful batched operation with a plain for-loop on CPU. All the functions in this module are defined with gradients in YAAD.\n\n\n\n\n\n"
-},
-
-{
-    "location": "#YAAD.Batched.ScalarIdentity",
-    "page": "Home",
-    "title": "YAAD.Batched.ScalarIdentity",
-    "category": "type",
-    "text": "ScalarIdentity{B, K, T} <: AbstractArray{T, 3}\n\nA batch of scalar multiplies a batch of identities, where batch size is B, each identity\'s size is K.\n\n\n\n\n\n"
-},
-
-{
-    "location": "#YAAD.Batched.Transpose",
-    "page": "Home",
-    "title": "YAAD.Batched.Transpose",
-    "category": "type",
-    "text": "Transpose{B, T, AT <: AbstractArray{T, 3}} <: AbstractArray{T, 3}\n\nBatched transpose. Transpose a batch of matrix.\n\n\n\n\n\n"
-},
-
-{
     "location": "#Batched-Operations-1",
     "page": "Home",
     "title": "Batched Operations",
