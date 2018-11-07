@@ -105,7 +105,7 @@ const AbstractVectorVariable{T} = AbstractArrayVariable{T, 1}
 A kind of leaf node. A general type for variables in a comput-graph.
 Similar to PyTorch's Variable, gradient will be accumulated to `var.grad`.
 """
-struct Variable{T} <: AbstractVariable{T}
+mutable struct Variable{T} <: AbstractVariable{T}
     value::T
     grad::T
 
@@ -260,7 +260,7 @@ backward(x, grad) = x
 backward(x::AbstractNode) = backward(x::AbstractNode, one(eltype(x)))
 
 function backward(x::Variable, grad)
-    x.grad += grad
+    x.grad .+= grad
     nothing
 end
 
