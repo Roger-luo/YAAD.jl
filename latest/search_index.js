@@ -145,6 +145,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "#YAAD.forward!",
+    "page": "Home",
+    "title": "YAAD.forward!",
+    "category": "function",
+    "text": "forward!(output, ...) -> output\n\n\n\n\n\n"
+},
+
+{
     "location": "#YAAD.kwargs",
     "page": "Home",
     "title": "YAAD.kwargs",
