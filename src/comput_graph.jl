@@ -5,6 +5,7 @@ export AbstractNode, Value, ValueType, AbstractVariable,
 export Variable, Node, CachedNode, forward, gradient, backward, value, args, arg, operator
 export register
 
+using LinearAlgebra
 # export register!
 
 """
@@ -317,6 +318,9 @@ function backward_size_assert(node::CachedNode, grad)
             " expect size $(size(node.output)), got $(size(grad))"
         )
 end
+
+backward_size_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where {T1 <: UniformScaling, T2} = true
+backward_size_assert(node::CachedNode{<:AbstractNode, T1}, grad::T2) where {T1, T2 <: UniformScaling} = true
 
 """
     gradient(node, grad)
