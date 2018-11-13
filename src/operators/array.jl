@@ -25,3 +25,8 @@ function gradient(::typeof(Base.view), grad, output, x::AbstractArray, inds...)
     setindex!(subgrad, grad, :)
     (grad_output, )
 end
+
+Base.reshape(x::Value, dims...) = register(Base.reshape, x, dims...)
+function gradient(::typeof(Base.reshape), grad, output, x, dims...)
+    (reshape(grad, size(x)...), )
+end
