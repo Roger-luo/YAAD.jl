@@ -261,7 +261,7 @@ backward(x, grad) = x
 backward(x::AbstractNode) = backward(x::AbstractNode, one(eltype(x)))
 
 function backward(x::Variable, grad)
-    x.grad .+= grad
+    @. x.grad += grad
     nothing
 end
 

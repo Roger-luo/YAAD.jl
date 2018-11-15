@@ -12,21 +12,57 @@ import LinearAlgebra
 import LinearAlgebra: BLAS
 
 # last dim is batch dim
-function gemm!(tA::Char, tB::Char, alpha::T, A::AbstractArray{T, 3}, B::AbstractArray{T, 3}, beta::T, C::AbstractArray{T, 3}) where T
-    nbatch = size(C, 3)
-    @inbounds for i = 1:nbatch
-        BLAS.gemm!(tA, tB, alpha, view(A, :, :, i), view(B, :, :, i), beta, view(C, :, :, i))
+for (gemm, elty) in
+        ((:dgemm_,:Float64),
+         (:sgemm_,:Float32),
+         (:zgemm_,:ComplexF64),
+         (:cgemm_,:ComplexF32))
+    @eval begin
+        function gemm!(transA::AbstractChar, transB::AbstractChar, alpha::($elty), A::AbstractArray{$elty, 3}, B::AbstractArray{$elty, 3}, beta::($elty), C::AbstractArray{$elty, 3})
+            @assert !BLAS.has_offset_axes(A, B, C)
+            @assert size(A, 3) == size(B, 3) == size(C, 3) "batch size mismatch"
+            m = size(A, transA == 'N' ? 1 : 2)
+            ka = size(A, transA == 'N' ? 2 : 1)
+            kb = size(B, transB == 'N' ? 1 : 2)
+            n = size(B, transB == 'N' ? 2 : 1)
+            if ka != kb || m != size(C,1) || n != size(C,2)
+                throw(DimensionMismatch("A has size ($m,$ka), B has size ($kb,$n), C has size $(size(C))"))
+            end
+            BLAS.chkstride1(A)
+            BLAS.chkstride1(B)
+            BLAS.chkstride1(C)
+
+            ptrA = Base.unsafe_convert(Ptr{$elty}, A)
+            ptrB = Base.unsafe_convert(Ptr{$elty}, B)
+            ptrC = Base.unsafe_convert(Ptr{$elty}, C)
+
+            for k in 1:size(A, 3)
+                ccall((LinearAlgebra.BLAS.@blasfunc($gemm), BLAS.libblas), Cvoid,
+                    (Ref{UInt8}, Ref{UInt8}, Ref{BLAS.BlasInt}, Ref{BLAS.BlasInt},
+                     Ref{BLAS.BlasInt}, Ref{$elty}, Ptr{$elty}, Ref{BLAS.BlasInt},
+                     Ptr{$elty}, Ref{BLAS.BlasInt}, Ref{$elty}, Ptr{$elty},
+                     Ref{BLAS.BlasInt}),
+                     transA, transB, m, n,
+                     ka, alpha, ptrA, max(1,stride(A,2)),
+                     ptrB, max(1,stride(B,2)), beta, ptrC,
+                     max(1,stride(C,2)))
+
+                ptrA += size(A, 1) * size(A, 2) * sizeof($elty)
+                ptrB += size(B, 1) * size(B, 2) * sizeof($elty)
+                ptrC += size(C, 1) * size(C, 2) * sizeof($elty)
+            end
+            C
+        end
+        function gemm(transA::AbstractChar, transB::AbstractChar, alpha::($elty), A::AbstractArray{$elty, 3}, B::AbstractArray{$elty, 3})
+            gemm!(transA, transB, alpha, A, B, zero($elty), similar(B, $elty, (size(A, transA == 'N' ? 1 : 2), size(B, transB == 'N' ? 2 : 1), size(B, 3))))
+        end
+        function gemm(transA::AbstractChar, transB::AbstractChar, A::AbstractArray{$elty, 3}, B::AbstractArray{$elty, 3})
+            gemm(transA, transB, one($elty), A, B)
+        end
     end
-    C
 end
 
-gemm!(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}, C::AbstractArray{T, 3}) where T =
-    gemm!('N', 'N', one(T), A, B, one(T), C)
-
-function gemm(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T
-    @boundscheck size(A, 3) == size(B, 3) || throw(DimensionMismatch("Batch dimension mismatch, got $(size(A, 3)) and $(size(B, 3))."))
-    gemm!(A, B, zeros(T, (size(A, 1), size(B, 2), size(A, 3))))
-end
+gemm(A::AbstractArray{T, 3}, B::AbstractArray{T, 3}) where T = gemm('N', 'N', A, B)
 
 function tr!(A::AbstractArray{T, 3}, out::AbstractArray{T, 1}) where T
     @inbounds for i in eachindex(out)
@@ -62,47 +98,38 @@ Base.IndexStyle(::Type{<:Transpose}) = IndexCartesian()
 # FIXME: implement a different generic function in case this becomes a pirate?
 Base.transpose(A::AbstractArray{T, 3}) where T = Transpose(A)
 
-gemm!(A::AbstractArray{T, 3}, B::Batched.Transpose, C::AbstractArray{T, 3}) where T =
-    gemm!('N', 'T', one(T), A, B.parent, one(T), C)
-gemm!(A::Batched.Transpose, B::AbstractArray{T, 3}, C::AbstractArray{T, 3}) where T =
-    gemm!('T', 'N', one(T), A.parent, B, one(T), C)
+gemm(A::AbstractArray{T, 3}, B::Batched.Transpose) where T = gemm('N', 'T', A, B.parent)
+gemm(A::Batched.Transpose, B::AbstractArray{T, 3}) where T = gemm('T', 'N', A.parent, B)
+gemm(A::Batched.Transpose, B::Batched.Transpose) = gemm('T', 'T', A.parent, B.parent)
 
-
-export ScalarIdentity
+export ScaleMatrix
 
 """
-    ScalarIdentity{B, K, T} <: AbstractArray{T, 3}
+    ScaleMatrix{B, K, T} <: AbstractArray{T, 3}
 
 A batch of scalar multiplies a batch of identities, where batch size is
 `B`, each identity's size is `K`.
 """
-struct ScalarIdentity{B, K, T, VT <: AbstractVector{T}} <: AbstractArray{T, 3}
+struct ScaleMatrix{B, K, T, VT <: AbstractVector{T}} <: AbstractArray{T, 3}
     scalars::VT
-    ScalarIdentity{B, K}(scalars::VT) where {B, K, T, VT <: AbstractVector{T}} = new{B, K, T, VT}(scalars)
+    ScaleMatrix{B, K}(scalars::VT) where {B, K, T, VT <: AbstractVector{T}} = new{B, K, T, VT}(scalars)
 end
 
-Base.size(x::ScalarIdentity{B, K, T}) where {B, K, T} = (K, K, B)
-Base.@propagate_inbounds Base.getindex(m::ScalarIdentity{B, K, T}, i::Int, j::Int, k::Int) where {B, K, T} =
+Base.size(x::ScaleMatrix{B, K, T}) where {B, K, T} = (K, K, B)
+Base.@propagate_inbounds Base.getindex(m::ScaleMatrix{B, K, T}, i::Int, j::Int, k::Int) where {B, K, T} =
     i == j ? getindex(m.scalars, k) : zero(T)
-Base.IndexStyle(::Type{<:ScalarIdentity}) = IndexCartesian()
-Base.transpose(A::ScalarIdentity) = A
+Base.IndexStyle(::Type{<:ScaleMatrix}) = IndexCartesian()
+Base.transpose(A::ScaleMatrix) = A
 
-function gemm!(A::ScalarIdentity{NBatch, K, T}, B::Transpose{NBatch, T}, C::AbstractArray{T, 3}) where {NBatch, K, T}
-    @inbounds for i in 1:NBatch
-        C[:, :, i] .+= A.scalars[i] * view(B, :, :, i)
+function gemm!(A::ScaleMatrix{NBatch, K, T}, B::AbstractArray{T, 3}, C::AbstractArray{T, 3}) where {NBatch, K, T}
+    @inbounds for k in 1:NBatch, j in 1:size(B, 2), i in 1:size(B, 1)
+        C[i, j, k] += A.scalars[k] * B[i, j, k]
     end
     C
 end
 
-function gemm!(A::ScalarIdentity{NBatch, K, T}, B::AbstractArray{T, 3}, C::AbstractArray{T, 3}) where {NBatch, K, T}
-    @inbounds for i in 1:NBatch
-        C[:, :, i] .+= A.scalars[i] * view(B, :, :, i)
-    end
-    C
-end
-
-gemm!(A::AbstractArray{T, 3}, B::ScalarIdentity{NBatch, K, T}, C::AbstractArray{T, 3}) where {NBatch, K, T} = gemm!(B, A, C)
-gemm!(A::Transpose{NBatch, T}, B::ScalarIdentity{NBatch, K, T}, C::AbstractArray{T, 3}) where {NBatch, K, T} = gemm!(B, A, C)
+gemm!(A::AbstractArray{T, 3}, B::ScaleMatrix{NBatch, K, T}, C::AbstractArray{T, 3}) where {NBatch, K, T} = gemm!(B, A, C)
+gemm!(A::Transpose{NBatch, T}, B::ScaleMatrix{NBatch, K, T}, C::AbstractArray{T, 3}) where {NBatch, K, T} = gemm!(B, A, C)
 
 end # Batched
 
@@ -116,5 +143,5 @@ end
 Batched.tr(A::Value) = register(Batched.tr, A)
 
 function gradient(::typeof(Batched.tr), grad, output, A::AbstractArray{T, 3}) where T
-    (Batched.ScalarIdentity{size(A, 3), size(A, 1)}(grad), )
+    (Batched.ScaleMatrix{size(A, 3), size(A, 1)}(grad), )
 end
