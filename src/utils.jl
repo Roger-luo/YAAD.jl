@@ -26,10 +26,8 @@ function zero_grad!(x::Union{CachedNode, Node})
     x
 end
 
-function zero_grad!(x::Variable{T}) where T
-    if isdefined(x, :grad)
-        fill!(x.grad, zero(T))
-    end
+function zero_grad!(x::Variable)
+    fill!(x.grad, zero(eltype(x.grad)))
     x
 end
 

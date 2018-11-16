@@ -44,10 +44,3 @@ Base.abs(x::Value) = register(Base.abs, x)
 
 gradient(::typeof(Base.abs), grad, output, x) = (grad * abs_gradient(x), )
 gradient(::Trait.Broadcasted{typeof(Base.abs)}, grad, output, x) = (@.(grad * abs_gradient(x)), )
-
-
-Base.sum(x::Value) = register(Base.sum, x)
-
-function gradient(::typeof(Base.sum), grad::Number, output, x::AbstractArray)
-    (fill!(similar(x), grad), )
-end

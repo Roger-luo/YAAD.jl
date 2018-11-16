@@ -8,8 +8,10 @@ Yet Another Automatic Differentiation package in Julia.
 
 ## Installation
 
+Press `]` and use `pkg` mode in Julia REPL, then type:
+
 ```
-pkg> add https://github.com/Roger-luo/YAAD.jl.git#master
+pkg> add YAAD
 ```
 
 ## Introduction
