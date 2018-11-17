@@ -44,5 +44,6 @@ function register_parameters end
 # TODO: move this to YAAD
 register_parameters(op::T) where T = error("$T's parameters are not registered")
 register_parameters(op::Function) = ()
+register_parameters(op::Operator) = ()
 # just an eye candy
 parameters(op) = register_parameters(op)
