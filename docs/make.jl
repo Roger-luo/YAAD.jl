@@ -16,7 +16,7 @@ makedocs(
         "Home" => "index.md",
     ],
     html_prettyurls = !("local" in ARGS),
-    html_canonical = "https://rogerluo.me/YAAD.jl/latest/",
+    html_canonical = "https://rogerluo.dev/YAAD.jl/latest/",
 )
 
 deploydocs(

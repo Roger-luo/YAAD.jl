@@ -1,8 +1,8 @@
 # YAAD.jl
 
 [![Build Status](https://travis-ci.org/Roger-luo/YAAD.jl.svg?branch=master)](https://travis-ci.org/Roger-luo/YAAD.jl)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://rogerluo.me/YAAD.jl/stable)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://rogerluo.me/YAAD.jl/latest)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://rogerluo.dev/YAAD.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://rogerluo.dev/YAAD.jl/latest)
 
 Yet Another Automatic Differentiation package in Julia.
 
@@ -16,7 +16,7 @@ pkg> add YAAD
 
 ## Introduction
 
-You may want to check my blog post about it: [Implement AD with Julia in ONE day](http://blog.rogerluo.me/2018/10/23/write-an-ad-in-one-day/)
+You may want to check my blog post about it: [Implement AD with Julia in ONE day](https://blog.rogerluo.dev/2018/10/23/write-an-ad-in-one-day/)
 
 This project aims to provide a similar interface with PyTorch's autograd, while
 keeping things simple. The core implementation only contains a straight-forward
